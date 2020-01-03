@@ -1,0 +1,8 @@
+{
+    "name": "dannyvilla/1s2u-sms",
+    "description": "Allow to send SMS via 1s2u (1s2u.com) gateway",
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "require": {}
+}
