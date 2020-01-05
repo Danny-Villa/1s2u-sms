@@ -36,19 +36,4 @@ return [
     */
 
     'password' => 'secret',
-
-    /*
-    |-----------------------------------------------------------------------
-    | Delivery Report URL
-    |-----------------------------------------------------------------------
-    |
-    | The password is also passed in combination with the username for
-    | authentication purposes. The password is provided during the registration.
-    |
-    | The password cannot be more than 20 characters long and can only
-    | contain alpha-numeric character.
-    |
-    */
-
-    'delivery_report_url' => 'https://www.my-websit.com'
 ];

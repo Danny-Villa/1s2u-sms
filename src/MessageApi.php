@@ -8,14 +8,15 @@
 namespace Oxanfoxs\OneServiceToYouSMS;
 
 
+use Oxanfoxs\OneServiceToYouSMS\Exception\ArgumentMissedException;
 use Oxanfoxs\OneServiceToYouSMS\Exception\InvalidCharacterException;
 use Oxanfoxs\OneServiceToYouSMS\Exception\UnsupportedMessageTypeException;
 use Oxanfoxs\OneServiceToYouSMS\Exception\ValueToLongException;
 
-class Sender
+class MessageApi
 {
 
-    const SIMPLE_TEXT_MESSAGE = 1;
+    const SIMPLE_TEXT_MESSAGE = 0;
 
     const UNICODE_MESSAGE = 1;
 
@@ -74,6 +75,16 @@ class Sender
      * @var string
      */
     protected $request;
+
+    /**
+     * MessageApi constructor.
+     */
+    public function __construct()
+    {
+        $this->request = "https://api.1s2u.io/bulksms?";
+        $this->mt = self::SIMPLE_TEXT_MESSAGE;
+        $this->fl = 0;
+    }
 
     /**
      * Get the message's content.
@@ -165,7 +176,7 @@ class Sender
     /**
      * Get the mobile number.
      *
-     * @return string
+     * @return array
      */
     public function mobileNumber()
     {
@@ -285,5 +296,86 @@ class Sender
         $this->mt = $type;
 
         return $this;
+    }
+
+    /**
+     * send the request to the server attempting to send the message.
+     *
+     * @return bool|string|mixed
+     */
+    public function send()
+    {
+        $this->makeRequest();
+
+        $response = file_get_contents($this->request);
+
+        return $response;
+    }
+
+    /**
+     * Send request to check credits balance.
+     *
+     * @param $username
+     * @param $password
+     * @return bool|string|mixed
+     */
+    public function checkCredit($username, $password)
+    {
+        $this->setUsername($username)
+            ->setPassword($password);
+
+        $response = file_get_contents('https://api.1s2u.io/checkbalance?user='.$this->username().'&pass='.$this->password());
+
+        return $response;
+    }
+
+    /**
+     * Encode special characters in order not to collide with reserved HTTP/HTTPS characters.
+     * Check the official documentation at https://www.1s2u.com for more information.
+     *
+     * @return $this
+     */
+    protected function encodeMessage()
+    {
+        return $this->setMessage(str_replace('%', '%25', $this->message()))
+            ->setMessage(str_replace('&', '%26', $this->message()))
+            ->setMessage(str_replace('+', '%2B', $this->message()))
+            ->setMessage(str_replace('#', '%23', $this->message()))
+            ->setMessage(str_replace('=', '%3D', $this->message()))
+            ->setMessage(str_replace('Enter', '%0A', $this->message()));
+    }
+
+    /**
+     * Build the request that will be sent.
+     *
+     * @return void
+     */
+    protected function makeRequest()
+    {
+        $this->validate();
+
+        $this->request .= 'username='.$this->username().'&password='.$this->password().'&mno='.$this->mobileNumber();
+        if (!empty($this->sid))
+            $this->request .='&sid='.$this->senderId();
+        $this->request .='&msg='.$this->encodeMessage()->message().'&mt='.$this->type().'&fl='.(int)$this->isFlashed();
+    }
+
+    /**
+     * Check required data.
+     *
+     * @throws ArgumentMissedException
+     */
+    protected function validate()
+    {
+        if (empty($this->username()))
+            throw new ArgumentMissedException('User name is required.');
+        if (empty($this->password()))
+            throw new ArgumentMissedException('Password is required.');
+        if (empty($this->mobileNumber()) || count($this->mobileNumber()))
+            throw new ArgumentMissedException('Mobile number is required.');
+        if (count($this->mobileNumber()) > 30)
+            throw new ArgumentMissedException('Cannot send a message to more than 30 mobile numbers.');
+        if (empty($this->message()))
+            throw new ArgumentMissedException('Message is required.');
     }
 }

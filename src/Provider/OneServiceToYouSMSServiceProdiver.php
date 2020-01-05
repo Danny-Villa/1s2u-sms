@@ -8,6 +8,7 @@
 namespace Oxanfoxs\OneServiceToYouSMS\Provider;
 
 use Illuminate\Support\ServiceProvider;
+use Oxanfoxs\OneServiceToYouSMS\MessageApi;
 
 class OneServiceToYouSMSServiceProdiver extends ServiceProvider
 {
@@ -28,6 +29,10 @@ class OneServiceToYouSMSServiceProdiver extends ServiceProvider
      */
     public function register()
     {
+        $this->app->bind('messageApi', function($app) {
+            $return = $app->make(MessageApi::class);
 
+            return $return;
+        });
     }
 }
