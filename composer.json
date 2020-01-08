@@ -1,12 +1,14 @@
 {
     "name": "dannyvilla/1s2u-sms",
-    "description": "Allow to send SMS via 1s2u (1s2u.com) gateway",
+    "description": "It is a package which makes it possible to send messages (SMS) through the gateway of https://www.1s2u.com",
     "type": "library",
     "license": "MIT",
     "minimum-stability": "dev",
     "authors": [{
         "name": "Danny Villa Kalonji",
-        "email": "dannykalonji529@gmail.com"
+        "email": "dannykalonji529@gmail.com",
+        "homepage": "https://www.oxanfoxs.com",
+        "role": "Developer"
     }],
     "require": {
         "php": ">=7.0.0",
