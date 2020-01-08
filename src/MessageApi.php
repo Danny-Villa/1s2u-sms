@@ -312,8 +312,7 @@ class MessageApi
     public function send()
     {
         $this->makeRequest();
-
-        dd($this->request);
+        
         $response = file_get_contents($this->request);
 
         return $response;
