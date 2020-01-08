@@ -84,6 +84,8 @@ class MessageApi
         $this->request = "https://api.1s2u.io/bulksms?";
         $this->mt = self::SIMPLE_TEXT_MESSAGE;
         $this->fl = 0;
+        $this->setUsername(config('1s2u.username'));
+        $this->setPassword(config('1s2u.password'));
     }
 
     /**
@@ -104,10 +106,10 @@ class MessageApi
      */
     public function setMessage($message)
     {
-        if (strlen($message) < 160)
+        if (strlen($message) > 160)
             throw new ValueToLongException("The message is to long. The message may consist of up to 160 characters,");
 
-        if (preg_match('#^[A-Za-z0-9\s\-/\\|_*#.,;:éçèàïüûôâêëö]+$#', $message))
+        if (!preg_match('#^[A-Za-z0-9\s\-/\\|_*\#.,;:éçèàïüûôâêëö!+%]+$#', $message))
             throw new InvalidCharacterException("Only the following set of characters are supported: A…Z, a…z, 0…9, blank spaces, and Meta characters \ (line feed)");
 
         $this->msg = $message;
@@ -133,10 +135,10 @@ class MessageApi
      */
     public function setUsername($username)
     {
-        if (strlen($username) < 20)
+        if (strlen($username) > 20)
             throw new ValueToLongException("The username cannot have more than 20 characters");
 
-        if (preg_match('#^[a-zA-Z0-9]+$#', $username))
+        if (!preg_match('#^[a-zA-Z0-9]+$#', $username))
             throw new InvalidCharacterException("The username may contain only alphanumeric characters.");
 
         $this->username = $username;
@@ -162,10 +164,10 @@ class MessageApi
      */
     public function setPassword($password)
     {
-        if (strlen($password) < 20)
+        if (strlen($password) > 20)
             throw new ValueToLongException("The password cannot have more than 20 characters");
 
-        if (preg_match('#^[a-zA-Z0-9]+$#', $password))
+        if (!preg_match('#^[a-zA-Z0-9]+$#', $password))
             throw new InvalidCharacterException("The password may contain only alphanumeric characters.");
 
         $this->password = $password;
@@ -174,28 +176,31 @@ class MessageApi
     }
 
     /**
-     * Get the mobile number.
+     * Get the mobile numbers.
      *
      * @return array
      */
-    public function mobileNumber()
+    public function mobileNumbers()
     {
         return $this->mno;
     }
 
     /**
-     * Attach one receiver mobile number.
+     * Append a receiver mobile number.
      *
      * @param string $number
      * @return $this
      */
-    public function setMobileNumber($number)
+    public function appendMobileNumber($number)
     {
-        if (strlen($number) < 20)
+        if (!is_string((string)$number))
+            throw new \InvalidArgumentException("The number should be a string.");
+
+        if (strlen($number) > 20)
             throw new ValueToLongException("The mobile number cannot have more than 20 characters");
 
-        if (preg_match('#^[0-9]+$#', $number))
-            throw new InvalidCharacterException("Only digits together with the country code. Insted of plus sign (+) double zero (00) may be used.");
+        if (!preg_match('#^[0-9]+$#', $number))
+            throw new InvalidCharacterException("Only digits together with the country code are supported. Instead of plus sign (+) double zero (00) may be used.");
 
         $this->mno[] = $number;
 
@@ -210,8 +215,9 @@ class MessageApi
      */
     public function setMobileNumbers(array $numbers)
     {
+        $this->mno = array();
         foreach ($numbers as $item)
-            $this->setMobileNumber($item);
+            $this->appendMobileNumber($item);
 
         return $this;
     }
@@ -235,10 +241,10 @@ class MessageApi
     public function setSenderId($from)
     {
         if (preg_match('#^[0-9]+$#', $from)) {
-            if (strlen($from) < 16)
+            if (strlen($from) > 16)
                 throw new ValueToLongException("The sender ID cannot have more then 16 characters when numeric characters are used.");
         } elseif (preg_match('#^[a-zA-Z0-9]+$#', $from)) {
-            if (strlen($from) < 11)
+            if (strlen($from) > 11)
                 throw new ValueToLongException("The sender ID cannot have more then 11 characters.");
         } else {
             throw new InvalidCharacterException("The sender ID can either be a valid international number up to 16 characters long, or an 11 characters alphanumeric string");
@@ -354,10 +360,12 @@ class MessageApi
     {
         $this->validate();
 
-        $this->request .= 'username='.$this->username().'&password='.$this->password().'&mno='.$this->mobileNumber();
+        $message = urlencode($this->encodeMessage()->message());
+
+        $this->request .= 'username='.$this->username().'&password='.$this->password().'&mno='.implode(',', $this->mobileNumbers());
         if (!empty($this->sid))
             $this->request .='&sid='.$this->senderId();
-        $this->request .='&msg='.$this->encodeMessage()->message().'&mt='.$this->type().'&fl='.(int)$this->isFlashed();
+        $this->request .='&msg='.$message.'&mt='.$this->type().'&fl='.(int)$this->isFlashed();
     }
 
     /**
@@ -371,9 +379,9 @@ class MessageApi
             throw new ArgumentMissedException('User name is required.');
         if (empty($this->password()))
             throw new ArgumentMissedException('Password is required.');
-        if (empty($this->mobileNumber()) || count($this->mobileNumber()))
+        if (count($this->mobileNumbers()) < 1)
             throw new ArgumentMissedException('Mobile number is required.');
-        if (count($this->mobileNumber()) > 30)
+        if (count($this->mobileNumbers()) > 30)
             throw new ArgumentMissedException('Cannot send a message to more than 30 mobile numbers.');
         if (empty($this->message()))
             throw new ArgumentMissedException('Message is required.');
