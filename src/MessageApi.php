@@ -109,7 +109,7 @@ class MessageApi
         if (strlen($message) > 160)
             throw new ValueToLongException("The message is to long. The message may consist of up to 160 characters,");
 
-        if (!preg_match('#^[A-Za-z0-9\s\-/\\|_*\#.,;:éçèàïüûôâêëö!+%]+$#', $message))
+        if (!preg_match('#^[A-Za-z0-9\s\-/\\|_*\#.,;:<>?{}\[\]`=@\'"!+%^$]+$#', $message))
             throw new InvalidCharacterException("Only the following set of characters are supported: A…Z, a…z, 0…9, blank spaces, and Meta characters \ (line feed)");
 
         $this->msg = $message;
@@ -312,7 +312,7 @@ class MessageApi
     public function send()
     {
         $this->makeRequest();
-        
+
         $response = file_get_contents($this->request);
 
         return $response;
