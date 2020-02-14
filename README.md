@@ -62,7 +62,7 @@ $response = MessageApi::setMessage('Hello word')
 ##### Note : 
 The text message should match the regular expression pattern below :
 ```php
-^[A-Za-z0-9\s\-/\\|_*#.,;:<>?{}\[\]`=@'"!+%^$]+$
+^[A-Za-z0-9\s\-/\\|_*#.,;:<>?{}()\[\]`=@'"!+%^$]+$
 ```
 To get more information about the response please check the official documentation [here](https://1s2u.com/sms-developers.asp)
 
