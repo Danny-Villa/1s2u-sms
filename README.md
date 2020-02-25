@@ -52,18 +52,51 @@ Then you can update credentials within the 1s2u configuration file.
 
 ## Usage
 
+1s2u api allows to send 2 types of message.
+- Simple text message : this type contains only [GSM 03.38](https://en.wikipedia.org/wiki/GSM_03.38) characters
+- Unicode message : this type use [UCS-2](https://en.wikipedia.org/wiki/Universal_Coded_Character_Set) charset.
+
+##### Send an auto-detected type message.
 ```php
 $response = MessageApi::setMessage('Hello word')
                       ->setSenderId('SMS')
                       ->setMobileNumbers(['123456789', '234567891'])
                       ->appendNumber('123456678')
-                      ->send()
+                      ->send();
 ```
-##### Note : 
-The text message should match the regular expression pattern below :
+
+##### Send a simple text message.
 ```php
-^[A-Za-z0-9\s\-/\\|_*#.,;:<>?{}()\[\]`=@'"!+%^$]+$
+$response = MessageApi::setMessage('Hello word', MessageApi::SIMPLE_TEXT_MESSAGE)
+                      ->setSenderId('FROM')
+                      ->setMobileNumbers(['1234567890'])
+                      ->send();
 ```
+
+##### Send a unicode message.
+```php
+$response = MessageApi::setMessage('Hello word', MessageApi::UNICODE_MESSAGE)
+                      ->setSenderId('FROM')
+                      ->setMobileNumbers(['1234567890'])
+                      ->send();
+```
+
+##### Send a flash message.
+```php
+$response = MessageApi::setMessage('Hello word')
+                      ->setSenderId('FROM')
+                      ->setMobileNumbers(['1234567890'])
+                      ->shouldFlash(true)
+                      ->send();
+```
+
+
+##### Checking credit.
+\Oxanfoxs\OneServiceToYouSMS\MessageApi::checkCredit() method allows to check credits balance.
+```php
+$response = MessageApi::checkCredit()
+```
+
 To get more information about the response please check the official documentation [here](https://1s2u.com/sms-developers.asp)
 
 ## Contributing

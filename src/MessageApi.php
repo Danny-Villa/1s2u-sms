@@ -21,6 +21,8 @@ class MessageApi
 
     const UNICODE_MESSAGE = 1;
 
+    const AUTO_DETECT = 2;
+
     /**
      * The username for authentication.
      *
@@ -64,7 +66,7 @@ class MessageApi
     protected $fl;
 
     /**
-     * The sender id or used for the "From" clause.
+     * The sender id is used for the "From" clause.
      *
      * @var string
      */
@@ -78,6 +80,13 @@ class MessageApi
     protected $request;
 
     /**
+     * Manage unicode characters.
+     *
+     * @var UnicodeManager
+     */
+    protected $unicodeManager;
+
+    /**
      * MessageApi constructor.
      */
     public function __construct()
@@ -87,6 +96,7 @@ class MessageApi
         $this->fl = 0;
         $this->setUsername(config('1s2u.username'));
         $this->setPassword(config('1s2u.password'));
+        $this->unicodeManager = new UnicodeManager();
     }
 
     /**
@@ -102,20 +112,46 @@ class MessageApi
     /**
      * Set the message's content.
      *
-     * @param $message
+     * This method auto-detect the right message type between simple text and unicode. The detection will depend on
+     * used characters. However if any type is passed in there won't be auto-detection.
+     *
+     * @param string $message
+     * @param int $type Determine the type of the message. It may be either simple text or unicode or auto-detect
      * @return $this
      */
-    public function setMessage($message)
+    public function setMessage($message, $type = self::AUTO_DETECT)
     {
-        if (strlen($message) > 160)
-            throw new ValueToLongException("The message is to long. The message may consist of up to 160 characters,");
+        $this->fixType($message, $type);
 
-        if (!preg_match('#^[A-Za-z0-9\s\-/\\|_*\#.,;:<>?{}()\[\]`=@\'"!+%^$]+$#', $message))
-            throw new InvalidCharacterException("Only the following set of characters are supported: A…Z, a…z, 0…9, blank spaces, and Meta characters \ (line feed)");
+        if ($this->type() === self::UNICODE_MESSAGE) {
 
-        $this->msg = $message;
+            if ($this->unicodeManager->detect($message))
+                $this->msg = $this->unicodeManager->encode($message);
+            else
+                $this->msg = $message;
+        } else {
+            $this->msg = $message;
+        }
 
         return $this;
+    }
+
+    /**
+     * Fix the right type of the message.
+     *
+     * @param $message
+     * @param $type
+     * @return void
+     */
+    protected function fixType($message, $type)
+    {
+        if ($type === self::AUTO_DETECT)
+            if (!$this->unicodeManager->detect($message))
+                $this->setType(self::SIMPLE_TEXT_MESSAGE);
+            else
+                $this->setType(self::UNICODE_MESSAGE);
+        else
+            $this->setType($type);
     }
 
     /**
@@ -274,7 +310,7 @@ class MessageApi
      */
     public function shouldFlash($value)
     {
-        $this->fl = $value ? true : false;
+        $this->fl = $value === true ? true : false;
         return $this;
     }
 
@@ -295,10 +331,10 @@ class MessageApi
      * @return $this
      * @throws UnsupportedMessageTypeException
      */
-    public function setType($type)
+    private function setType($type)
     {
-        if ($type !== self::SIMPLE_TEXT_MESSAGE)
-            throw new UnsupportedMessageTypeException('Only simple text messages are supported at the moment.');
+        if ($type !== self::SIMPLE_TEXT_MESSAGE && $type !== self::UNICODE_MESSAGE)
+            throw new UnsupportedMessageTypeException('Only simple text and unicode messages are supported at the moment.');
 
         $this->mt = $type;
 
@@ -306,7 +342,7 @@ class MessageApi
     }
 
     /**
-     * send the request to the server attempting to send the message.
+     * Send the request to the provider attempting to send the message.
      *
      * @throws SmsNotSentException
      * @return bool|string|mixed
@@ -327,15 +363,10 @@ class MessageApi
     /**
      * Send request to check credits balance.
      *
-     * @param $username
-     * @param $password
      * @return bool|string|mixed
      */
-    public function checkCredit($username, $password)
+    public function checkCredit()
     {
-        $this->setUsername($username)
-            ->setPassword($password);
-
         $response = file_get_contents('https://api.1s2u.io/checkbalance?user='.$this->username().'&pass='.$this->password());
 
         return $response;
@@ -366,7 +397,10 @@ class MessageApi
     {
         $this->validate();
 
-        $message = urlencode($this->encodeMessage()->message());
+        if ($this->type() === self::SIMPLE_TEXT_MESSAGE)
+            $message = urlencode($this->encodeMessage()->message());
+        else
+            $message = $this->message();
 
         $this->request .= 'username='.$this->username().'&password='.$this->password().'&mno='.implode(',', $this->mobileNumbers());
         if (!empty($this->sid))
@@ -375,7 +409,7 @@ class MessageApi
     }
 
     /**
-     * Check required data.
+     * Check whether required values are filled.
      *
      * @throws ArgumentMissedException
      */

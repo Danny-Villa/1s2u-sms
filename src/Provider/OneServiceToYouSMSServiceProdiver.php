@@ -30,9 +30,9 @@ class OneServiceToYouSMSServiceProdiver extends ServiceProvider
     public function register()
     {
         $this->app->bind('messageApi', function($app) {
-            $return = $app->make(MessageApi::class);
+            $instance = $app->make(MessageApi::class);
 
-            return $return;
+            return $instance;
         });
     }
 }
