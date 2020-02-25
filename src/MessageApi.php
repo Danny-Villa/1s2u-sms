@@ -17,11 +17,11 @@ use Oxanfoxs\OneServiceToYouSMS\Exception\SmsNotSentException;
 class MessageApi
 {
 
-    const SIMPLE_TEXT_MESSAGE = 0;
+    const SIMPLE_TEXT_MESSAGE = 'text';
 
-    const UNICODE_MESSAGE = 1;
+    const UNICODE_MESSAGE = 'unicode';
 
-    const AUTO_DETECT = 2;
+    const AUTO_DETECT = 'auto';
 
     /**
      * The username for authentication.
@@ -124,7 +124,6 @@ class MessageApi
         $this->fixType($message, $type);
 
         if ($this->type() === self::UNICODE_MESSAGE) {
-
             if ($this->unicodeManager->detect($message))
                 $this->msg = $this->unicodeManager->encode($message);
             else
@@ -145,12 +144,12 @@ class MessageApi
      */
     protected function fixType($message, $type)
     {
-        if ($type === self::AUTO_DETECT)
+        if ($type === self::AUTO_DETECT) {
             if (!$this->unicodeManager->detect($message))
                 $this->setType(self::SIMPLE_TEXT_MESSAGE);
             else
                 $this->setType(self::UNICODE_MESSAGE);
-        else
+        } else
             $this->setType($type);
     }
 
@@ -380,12 +379,12 @@ class MessageApi
      */
     protected function encodeMessage()
     {
-        return $this->setMessage(str_replace('%', '%25', $this->message()))
-            ->setMessage(str_replace('&', '%26', $this->message()))
-            ->setMessage(str_replace('+', '%2B', $this->message()))
-            ->setMessage(str_replace('#', '%23', $this->message()))
-            ->setMessage(str_replace('=', '%3D', $this->message()))
-            ->setMessage(str_replace('Enter', '%0A', $this->message()));
+        return $this->setMessage(str_replace('%', '%25', $this->message()), $this->type())
+            ->setMessage(str_replace('&', '%26', $this->message()), $this->type())
+            ->setMessage(str_replace('+', '%2B', $this->message()), $this->type())
+            ->setMessage(str_replace('#', '%23', $this->message()), $this->type())
+            ->setMessage(str_replace('=', '%3D', $this->message()), $this->type())
+            ->setMessage(str_replace('Enter', '%0A', $this->message()), $this->type());
     }
 
     /**
@@ -405,7 +404,7 @@ class MessageApi
         $this->request .= 'username='.$this->username().'&password='.$this->password().'&mno='.implode(',', $this->mobileNumbers());
         if (!empty($this->sid))
             $this->request .='&sid='.$this->senderId();
-        $this->request .='&msg='.$message.'&mt='.$this->type().'&fl='.(int)$this->isFlashed();
+        $this->request .='&msg='.$message.'&mt='.($this->type() === self::UNICODE_MESSAGE ? 1 : 0).'&fl='.(int)$this->isFlashed();
     }
 
     /**

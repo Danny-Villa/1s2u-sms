@@ -29,7 +29,7 @@ class UnicodeManager
      */
     public function encode($message)
     {
-        return '00'.strtoupper(bin2hex(mb_convert_encoding($message, 'UCS-2', 'auto')));
+        return strtoupper(bin2hex(mb_convert_encoding($message, 'UCS-2', 'auto')));
     }
 
     /**
