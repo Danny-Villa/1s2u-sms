@@ -13,6 +13,7 @@ use Oxanfoxs\OneServiceToYouSMS\Exception\InvalidCharacterException;
 use Oxanfoxs\OneServiceToYouSMS\Exception\UnsupportedMessageTypeException;
 use Oxanfoxs\OneServiceToYouSMS\Exception\ValueToLongException;
 use Oxanfoxs\OneServiceToYouSMS\Exception\SmsNotSentException;
+use Oxanfoxs\OneServiceToYouSMS\SmsCounter;
 
 class MessageApi
 {
@@ -396,12 +397,16 @@ class MessageApi
     {
         $this->validate();
 
-        if ($this->type() === self::SIMPLE_TEXT_MESSAGE)
-            $message = urlencode($this->encodeMessage()->message());
-        else
+        if ($this->type() === self::SIMPLE_TEXT_MESSAGE) {
+            $smsCounter = new SmsCounter();
+            $this->msg = $smsCounter->sanitizeToGSM($this->encodeMessage()->message());
+            $message = urlencode($this->message());
+        } else {
             $message = $this->message();
+        }
 
         $this->request .= 'username='.$this->username().'&password='.$this->password().'&mno='.implode(',', $this->mobileNumbers());
+
         if (!empty($this->sid))
             $this->request .='&sid='.$this->senderId();
         $this->request .='&msg='.$message.'&mt='.($this->type() === self::UNICODE_MESSAGE ? 1 : 0).'&fl='.(int)$this->isFlashed();
