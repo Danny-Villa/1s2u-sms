@@ -172,11 +172,13 @@ class MessageApi
      */
     public function setUsername($username)
     {
-        if (strlen($username) > 20)
-            throw new ValueToLongException("The username cannot have more than 20 characters");
+        // Following lines are no longer supported as 1s2u changed their naming process.
+        //
+//         if (strlen($username) > 20)
+//             throw new ValueToLongException("The username cannot have more than 20 characters");
 
-        if (!preg_match('#^[a-zA-Z0-9]+$#', $username))
-            throw new InvalidCharacterException("The username may contain only alphanumeric characters.");
+//         if (!preg_match('#^[a-zA-Z0-9]+$#', $username))
+//             throw new InvalidCharacterException("The username may contain only alphanumeric characters.");
 
         $this->username = $username;
 
